@@ -1,561 +1,762 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="no">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="mobile-web-app-capable" content="yes">
-<title>Sub Tracker</title>
-<link rel="manifest" href="/manifest.json">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oppsal IF – Norway Cup 2026</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html, body {
-    width: 100%; height: 100%;
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background: #EAF2FB;
+    color: #0A1F4A;
+    min-height: 100vh;
+    padding: 0 0 3rem;
+  }
+
+  header {
+    background: #fff;
+    border-bottom: 1px solid #D0E3F5;
+    padding: 1.1rem 1rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .header-title {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: #0A1F4A;
+    margin-bottom: 10px;
+  }
+
+  .header-sub {
+    font-size: 12px;
+    color: #7AAAE0;
+    margin-top: -6px;
+    margin-bottom: 10px;
+    font-weight: 400;
+  }
+
+  .day-btns {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .day-btns::-webkit-scrollbar { display: none; }
+
+  .dbtn {
+    flex-shrink: 0;
+    padding: 9px 10px;
+    border: 1px solid #D0E3F5;
+    background: #fff;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    color: #2D5FBF;
+    transition: all .15s;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .dbtn.active {
+    background: #1E4696;
+    color: #fff;
+    border-color: #1E4696;
+  }
+
+  .lag-btns {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    margin-bottom: 8px;
+  }
+
+  .spiller-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .spiller-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #D0E3F5;
+    border-radius: 99px;
+    font-size: 13px;
+    font-family: inherit;
+    color: #0A1F4A;
+    outline: none;
+    transition: border-color .15s;
+    background: #fff;
+  }
+
+  .spiller-input:focus { border-color: #7AAAE0; }
+  .spiller-input::placeholder { color: #A8C5EC; }
+
+  .spiller-clear {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #7AAAE0;
+    padding: 4px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .spiller-clear.vis { display: flex; align-items: center; }
+
+  .spiller-tag {
+    display: none;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #1E4696;
+    padding: 3px 10px 3px 12px;
+    background: #D0E3F5;
+    border-radius: 99px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .spiller-tag.vis { display: inline-flex; }
+
+  .spiller-wrap {
+    position: relative;
+    flex: 1;
+  }
+
+  .spiller-suggestions {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #D0E3F5;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(10,31,74,.08);
     overflow: hidden;
-    background: #f4f3ef;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    z-index: 20;
+  }
+
+  .spiller-suggestions.vis { display: block; }
+
+  .sug-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  .sug-item:not(:last-child) { border-bottom: 1px solid #EAF2FB; }
+  .sug-item:hover, .sug-item.focused { background: #EAF2FB; }
+
+  .sug-initial { font-weight: 600; color: #0A1F4A; letter-spacing: 0.5px; }
+  .sug-match { color: #4A7ED4; }
+
+  .sug-lag {
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: 99px;
+    padding: 2px 9px;
+    flex-shrink: 0;
+  }
+
+  .sug-left { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .sug-navn { font-size: 11px; color: #7AAAE0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sug-right { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+
+  .rolle-pill {
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 99px;
+    padding: 2px 8px;
+    flex-shrink: 0;
+    background: #f0f4fa;
+    color: #7AAAE0;
+  }
+  .rolle-lagleder { background: #fff3e0; color: #c26212; }
+
+  /* Day button colors — pastel blue / pink / purple */
+  .dbtn.d-sun { background: #FDE8F2; border-color: #F5CCDE; color: #B05878; }
+  .dbtn.d-mon { background: #E8F1FD; border-color: #CCDAF5; color: #3D6BAA; }
+  .dbtn.d-tue { background: #F0E8FD; border-color: #DCCAF5; color: #6855AA; }
+  .dbtn.d-wed { background: #FDE8FB; border-color: #F5CCF0; color: #A845A0; }
+  .dbtn.d-thu { background: #E8EBFD; border-color: #CCCEF5; color: #4555AA; }
+  .dbtn.d-fri { background: #F5E8FD; border-color: #E5CCF5; color: #8848AA; }
+
+  .dbtn.d-sun.active { background: #F2B0CC; border-color: #F2B0CC; color: #6A2040; }
+  .dbtn.d-mon.active { background: #AECAF0; border-color: #AECAF0; color: #1A3D6A; }
+  .dbtn.d-tue.active { background: #C8B0F0; border-color: #C8B0F0; color: #30206A; }
+  .dbtn.d-wed.active { background: #F0AEEA; border-color: #F0AEEA; color: #6A1868; }
+  .dbtn.d-thu.active { background: #B0B8F0; border-color: #B0B8F0; color: #1E286A; }
+  .dbtn.d-fri.active { background: #D8AEED; border-color: #D8AEED; color: #46186A; }
+
+  /* Match card day tints */
+  .kamp.d-sun { background: #FEF3F7; border-color: #F5D8E5; border-left: 3px solid #E8A0BC; }
+  .kamp.d-mon { background: #F3F7FE; border-color: #D5E3F7; border-left: 3px solid #9CBBEA; }
+  .kamp.d-tue { background: #F7F3FE; border-color: #E0D5F7; border-left: 3px solid #BEAAEC; }
+  .kamp.d-wed { background: #FEF3FD; border-color: #F5D5F2; border-left: 3px solid #E8A0E2; }
+  .kamp.d-thu { background: #F3F4FE; border-color: #D5D8F7; border-left: 3px solid #A0AAEC; }
+  .kamp.d-fri { background: #FAF3FE; border-color: #ECD5F7; border-left: 3px solid #CCA0EC; }
+
+  .lagleder-linje {
+    font-size: 11px;
+    color: #A8C5EC;
+    margin-bottom: 8px;
+    padding: 0 2px;
+    line-height: 1.5;
+  }
+  .ll-team { font-weight: 600; color: #7AAAE0; }
+
+  .lbtn {
+    padding: 8px 4px;
+    border: 1px solid #D0E3F5;
+    background: #fff;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    color: #2D5FBF;
+    transition: all .15s;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .lbtn.active-alle { background: #0A1F4A; color: #fff; border-color: #0A1F4A; }
+  .lbtn.active-1    { background: #1E4696; color: #fff; border-color: #1E4696; }
+  .lbtn.active-2    { background: #1B6E8F; color: #fff; border-color: #1B6E8F; }
+
+  main {
+    padding: 1rem 0.85rem 0;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .count {
+    font-size: 12px;
+    color: #7AAAE0;
+    margin-bottom: 0.6rem;
+    padding: 0 2px;
+  }
+
+  .kamp {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #D0E3F5;
+    padding: 13px 14px 11px;
+    margin-bottom: 8px;
+  }
+
+  .kamp-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 7px;
+  }
+
+  .lag-badge {
+    border-radius: 99px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    flex-shrink: 0;
+  }
+
+  .b1 { background: #D0E3F5; color: #1E4696; }
+  .b2 { background: #cce8f0; color: #1B6E8F; }
+
+  .kamp-tidblokk {
+    text-align: right;
+    flex-shrink: 0;
+    margin-left: 8px;
+  }
+
+  .kamp-tid {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1;
+    color: #0A1F4A;
+  }
+
+  .kamp-dag {
+    font-size: 11px;
+    color: #A8C5EC;
+    margin-top: 2px;
+    text-align: right;
+  }
+
+  .kamp-teams {
     font-size: 14px;
-    color: #1a1a1a;
-    touch-action: none;
+    font-weight: 600;
+    color: #0A1F4A;
+    margin-bottom: 3px;
+    line-height: 1.3;
   }
-  .screen { display: none; width: 100%; height: 100%; flex-direction: column; overflow: hidden; }
-  .screen.active { display: flex; }
 
-  #setup { padding: 12px 14px; gap: 8px; }
-  .setup-title { font-size: 17px; font-weight: 600; color: #111; }
-  .setup-sub { font-size: 12px; color: #888; margin-top: 1px; }
-  .roster-preset-bar { display: flex; gap: 6px; align-items: center; }
-  .preset-label { font-size: 11px; color: #888; white-space: nowrap; }
-  .preset-btn { font-size: 12px; padding: 5px 10px; border-radius: 20px;
-    background: #e8f0fc; color: #2a5ccf; border: 1px solid #b8cefc; cursor: pointer; white-space: nowrap; }
-  .preset-btn:active { opacity: 0.7; }
-  .roster-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-  table { width: 100%; border-collapse: collapse; }
-  th { font-size: 11px; color: #888; font-weight: 500; text-align: left; padding: 4px 4px 4px 0;
-       border-bottom: 1px solid #e0ddd8; }
-  td { padding: 5px 3px 5px 0; vertical-align: middle; border-bottom: 1px solid #f0ede8; }
-  input[type=text], input[type=number] {
-    border: 1px solid #d8d5d0; border-radius: 7px; padding: 5px 7px;
-    font-size: 13px; background: #fff; color: #1a1a1a; width: 100%;
-    -webkit-appearance: none;
+  .kamp-arena {
+    font-size: 12px;
+    color: #7AAAE0;
+    display: flex;
+    align-items: center;
+    gap: 3px;
   }
-  .num-input { width: 44px !important; text-align: center; }
-  .role-btn { padding: 4px 8px; font-size: 11px; border-radius: 20px; cursor: pointer; border: 1px solid #ccc; background: #f5f5f5; color: #555; }
-  .role-btn.keeper { background: #fff8e0; color: #8a6500; border-color: #e0c060; }
-  .del-btn { background: none; border: none; color: #bbb; font-size: 16px; cursor: pointer; padding: 2px 6px; }
-  .add-row { display: flex; gap: 6px; align-items: center; }
-  .add-row input[type=text] { flex: 1; }
-  .btn { border: none; border-radius: 10px; padding: 10px 16px; font-size: 14px;
-    font-weight: 600; cursor: pointer; -webkit-appearance: none; }
-  .btn-primary { background: #2a5ccf; color: #fff; width: 100%; padding: 13px; font-size: 15px; }
-  .btn-primary:active { opacity: 0.85; }
-  .btn-small { background: #e8f0fc; color: #2a5ccf; font-size: 12px; padding: 6px 12px;
-    border-radius: 8px; font-weight: 500; border: none; cursor: pointer; }
-  .btn-small:active { opacity: 0.7; }
-  .setup-err { font-size: 12px; color: #c0392b; text-align: center; min-height: 16px; }
 
-  #game { padding: 8px 10px 6px; gap: 5px; }
-  .top-bar { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-  .timer { font-size: 24px; font-weight: 700; color: #111; min-width: 62px; font-variant-numeric: tabular-nums; }
-  .top-bar .btn { padding: 7px 14px; font-size: 13px; font-weight: 600; border-radius: 9px; }
-  .btn-start  { background: #2a5ccf; color: #fff; }
-  .btn-pause  { background: #fdecea; color: #c0392b; }
-  .btn-resume { background: #2a5ccf; color: #fff; }
-  .btn-reset  { background: #f0ede8; color: #555; }
-  .btn-edit   { background: #f0ede8; color: #555; margin-left: auto; }
-  .stats-row { display: flex; gap: 5px; flex-shrink: 0; }
-  .stat { flex: 1; background: #fff; border-radius: 8px; padding: 5px 6px; text-align: center; border: 1px solid #e8e5e0; }
-  .stat-val { font-size: 13px; font-weight: 600; color: #111; }
-  .stat-lbl { font-size: 10px; color: #999; margin-top: 1px; }
-  .stat-val.warn { color: #c07000; }
-  .suggest-bar { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-  .suggest-text { font-size: 11px; color: #666; flex: 1; min-height: 16px; }
-  .suggest-text b { color: #2a5ccf; }
+  .kamp-arena svg { flex-shrink: 0; opacity: .6; }
 
-  .pitch-wrap {
-    flex: 1; background: #2e7d3a; border-radius: 10px; border: 2px solid #1e5a28;
-    display: flex; flex-direction: column; padding: 3px 4px; gap: 0;
-    overflow: hidden; min-height: 0;
+  .nedtelling {
+    margin-top: 9px;
+    padding-top: 9px;
+    border-top: 1px solid #D0E3F5;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #A8C5EC;
+    min-height: 22px;
   }
-  .pitch-zone { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-  .pitch-zone-label { font-size: 9px; color: rgba(255,255,255,0.4); text-transform: uppercase;
-    letter-spacing: 0.5px; text-align: center; line-height: 1.6; flex-shrink: 0; }
-  .pitch-row { flex: 1; display: flex; justify-content: center; align-items: center;
-    gap: 5px; padding: 2px 4px; border-radius: 6px; transition: background 0.1s, outline 0.1s; min-height: 0; }
-  .pitch-row.drag-over { background: rgba(255,255,255,0.12); outline: 1.5px dashed rgba(255,255,255,0.7); outline-offset: -2px; }
-  .pitch-row.drop-blocked { background: rgba(220,60,60,0.1); outline: 1.5px dashed rgba(220,60,60,0.7); outline-offset: -2px; }
-  .pitch-divider { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 0 6px; flex-shrink: 0; }
 
-  .bench-wrap { flex-shrink: 0; background: #fff; border-radius: 9px; border: 1px solid #e8e5e0; padding: 5px 7px; }
-  .bench-header { font-size: 11px; font-weight: 600; color: #888; margin-bottom: 4px; }
-  .bench-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px;
-    min-height: 46px; padding: 2px; border-radius: 6px; border: 1.5px dashed #ddd;
-    transition: border-color 0.1s; align-items: center; }
-  .bench-row.drag-over { border-color: #2a5ccf; background: #f0f4ff; }
+  .nd-label { color: #A8C5EC; }
+  .nd-tall { font-size: 14px; font-weight: 700; color: #0A1F4A; }
+  .nd-snart { font-size: 14px; font-weight: 700; color: #1B6E8F; font-variant-numeric: tabular-nums; letter-spacing: 0.5px; }
 
-  .player { display: flex; flex-direction: column; align-items: center; justify-content: center;
-    border-radius: 7px; cursor: grab; user-select: none;
-    border: 1.5px solid rgba(255,255,255,0.25); touch-action: none; padding: 2px;
-    transition: outline 0.1s; width: 52px; min-height: 54px; }
-  .player:active { cursor: grabbing; }
-  .player.on-pitch { background: rgba(255,255,255,0.2); color: #fff; }
-  .player.keeper.on-pitch { background: rgba(255,200,0,0.35); border-color: rgba(255,200,0,0.7); }
-  .player.on-bench { background: #fff; color: #1a1a1a; border-color: #e0ddd8; }
-  .player.keeper.on-bench { background: #fffbe8; border-color: #e0c060; }
-  .player.dragging { opacity: 0.2; }
-  .player.drop-target { outline: 2px solid #fff; outline-offset: 1px; }
-  .player.on-bench.drop-target { outline: 2px solid #2a5ccf; }
-  .p-pos  { font-size: 10px; font-weight: 700; opacity: 0.75; line-height: 1.2; }
-  .p-name { font-size: 10px; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 50px; line-height: 1.2; }
-  .p-time { font-size: 9px; opacity: 0.7; line-height: 1.3; text-align: center; }
+  .nd-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 99px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
 
-  .log-wrap { flex-shrink: 0; }
-  .log-toggle { display: flex; align-items: center; justify-content: space-between;
-    font-size: 11px; font-weight: 600; color: #888; cursor: pointer; padding: 3px 0; user-select: none; }
-  .log-toggle .arrow { font-size: 10px; transition: transform 0.2s; }
-  .log-toggle.open .arrow { transform: rotate(180deg); }
-  .log-body { overflow: hidden; max-height: 0; transition: max-height 0.25s ease; }
-  .log-body.open { max-height: 80px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-  .log-entry { font-size: 11px; color: #777; padding: 2px 0; border-bottom: 1px solid #f0ede8; }
-  .log-entry:last-child { border-bottom: none; }
-  .log-empty { font-size: 11px; color: #bbb; }
-  .notice { background: #fdecea; color: #c0392b; border-radius: 8px;
-    padding: 5px 10px; font-size: 12px; flex-shrink: 0; display: none; }
+  .nd-startet   { background: #D0E3F5; color: #1E4696; }
+  .nd-avsluttet { background: #EAF2FB; color: #A8C5EC; }
+
+  .bursdag-linje {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #b04878;
+    font-weight: 500;
+  }
+
+  .empty {
+    text-align: center;
+    color: #A8C5EC;
+    padding: 3rem 1rem;
+    font-size: 14px;
+  }
+
+  @media (min-width: 480px) {
+    .kamp-tid { font-size: 30px; }
+  }
 </style>
 </head>
 <body>
 
-<div id="setup" class="screen active">
-  <div class="setup-title">Sub Tracker</div>
-  <div class="setup-sub">Set up your squad, then start the match.</div>
-  <div class="roster-preset-bar">
-    <span class="preset-label">Roster:</span>
-    <button class="preset-btn" onclick="loadPreset()">Load my team</button>
-  </div>
-  <div class="roster-scroll">
-    <table>
-      <thead><tr>
-        <th style="width:38px">#</th>
-        <th>Name</th>
-        <th style="width:66px">Role</th>
-        <th style="width:28px"></th>
-      </tr></thead>
-      <tbody id="roster-body"></tbody>
-    </table>
-  </div>
-  <div class="add-row">
-    <input type="text" id="new-name" placeholder="Player name" maxlength="14"
-      onkeydown="if(event.key==='Enter')addPlayer()">
-    <input type="number" id="new-num" min="1" max="99" placeholder="#" class="num-input">
-    <button class="btn btn-small" onclick="addPlayer()">Add</button>
-  </div>
-  <button class="btn btn-primary" onclick="startGame()">Start match →</button>
-  <div class="setup-err" id="setup-err"></div>
-</div>
+<header>
+  <div class="header-title">Oppsal IF – Norway Cup 2026</div>
+  <div class="header-sub">26.–31. juli 2026 · Ekebergsletta, Oslo</div>
 
-<div id="game" class="screen">
-  <div class="top-bar">
-    <span class="timer" id="timer-display">00:00</span>
-    <button class="btn btn-start" id="btn-start" onclick="toggleTimer()">Start</button>
-    <button class="btn btn-reset" onclick="resetTimer()">Reset</button>
-    <button class="btn btn-edit" onclick="goSetup()">Squad</button>
+  <div class="day-btns">
+    <button class="dbtn active" onclick="setDay('alle')">Alle dager</button>
+    <button class="dbtn d-sun" onclick="setDay('søndag')">Søn 26/07</button>
+    <button class="dbtn d-mon" onclick="setDay('mandag')">Man 27/07</button>
+    <button class="dbtn d-tue" onclick="setDay('tirsdag')">Tir 28/07</button>
+    <button class="dbtn d-wed" onclick="setDay('onsdag')">Ons 29/07</button>
+    <button class="dbtn d-thu" onclick="setDay('torsdag')">Tor 30/07</button>
+    <button class="dbtn d-fri" onclick="setDay('fredag')">Fre 31/07</button>
   </div>
-  <div class="stats-row" id="stats-row">
-    <div class="stat"><div class="stat-val">0/7</div><div class="stat-lbl">on pitch</div></div>
-    <div class="stat"><div class="stat-val">00:00</div><div class="stat-lbl">avg</div></div>
-    <div class="stat"><div class="stat-val">00:00</div><div class="stat-lbl">imbalance</div></div>
+
+  <div class="lag-btns">
+    <button class="lbtn active-alle" onclick="setLag('alle')">Alle lag</button>
+    <button class="lbtn" onclick="setLag(1)">Oppsal 1</button>
+    <button class="lbtn" onclick="setLag(2)">Oppsal 2</button>
   </div>
-  <div class="notice" id="notice"></div>
-  <div class="suggest-bar">
-    <span class="suggest-text" id="suggest-text"></span>
-    <button class="btn btn-small" onclick="suggestSub()">Who needs time?</button>
+  <div class="lagleder-linje" id="lagleder-linje"></div>
+
+  <div class="spiller-row">
+    <div class="spiller-wrap">
+      <input id="spiller-input" class="spiller-input" type="text" placeholder="Finn spiller – initialer, f.eks FRV"
+        oninput="onSpillerInput(this.value)" onkeydown="onSpillerKey(event)"
+        autocomplete="off" autocorrect="off" spellcheck="false" />
+      <div class="spiller-suggestions" id="spiller-suggestions"></div>
+    </div>
+    <button class="spiller-clear" id="spiller-clear" onclick="clearSpiller()" title="Fjern filter">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <span class="spiller-tag" id="spiller-tag"></span>
   </div>
-  <div class="pitch-wrap">
-    <div class="pitch-zone">
-      <div class="pitch-zone-label">Attack</div>
-      <div class="pitch-row" id="row-attack"
-        ondragover="rowOver(event,'attack')" ondragleave="rowLeave('attack')" ondrop="rowDrop(event,'attack')"></div>
-    </div>
-    <hr class="pitch-divider">
-    <div class="pitch-zone">
-      <div class="pitch-zone-label">Midfield</div>
-      <div class="pitch-row" id="row-mid"
-        ondragover="rowOver(event,'mid')" ondragleave="rowLeave('mid')" ondrop="rowDrop(event,'mid')"></div>
-    </div>
-    <hr class="pitch-divider">
-    <div class="pitch-zone">
-      <div class="pitch-zone-label">Defence</div>
-      <div class="pitch-row" id="row-def"
-        ondragover="rowOver(event,'def')" ondragleave="rowLeave('def')" ondrop="rowDrop(event,'def')"></div>
-    </div>
-    <hr class="pitch-divider">
-    <div class="pitch-zone" style="flex:0.6">
-      <div class="pitch-row" id="row-gk"
-        ondragover="rowOver(event,'gk')" ondragleave="rowLeave('gk')" ondrop="rowDrop(event,'gk')"></div>
-    </div>
-  </div>
-  <div class="bench-wrap">
-    <div class="bench-header">Bench</div>
-    <div class="bench-row" id="zone-bench"
-      ondragover="benchOver(event)" ondragleave="benchLeave()" ondrop="benchDrop(event)"></div>
-  </div>
-  <div class="log-wrap">
-    <div class="log-toggle" id="log-toggle" onclick="toggleLog()">
-      <span>Sub log</span><span class="arrow">▾</span>
-    </div>
-    <div class="log-body" id="log-body">
-      <div class="log-empty" id="log-empty">No subs yet</div>
-    </div>
-  </div>
-</div>
+</header>
+
+<main>
+  <div class="count" id="count"></div>
+  <div id="liste"></div>
+</main>
 
 <script>
-// ═══════════════════════════════════════════
-//  EDIT YOUR TEAM ROSTER HERE
-// ═══════════════════════════════════════════
-const PRESET_ROSTER = [
-  { name: "Alex",   num: 1, role: "keeper" },
-  { name: "Jordan", num: 2, role: "field"  },
-  { name: "Sam",    num: 3, role: "field"  },
-  { name: "Morgan", num: 4, role: "field"  },
-  { name: "Casey",  num: 5, role: "field"  },
-  { name: "Riley",  num: 6, role: "field"  },
-  { name: "Taylor", num: 7, role: "field"  },
-  { name: "Drew",   num: 8, role: "field"  },
+const kamper = [
+  // Oppsal 1 – Girls 11* Mandag
+  {lag:1,dag:'mandag', hjem:'Lyn Fotball United',        borte:'Oppsal 1',              tid:'14:00',arena:'09 EK7'},
+  {lag:1,dag:'mandag', hjem:'Kolbotn IL Hvit',           borte:'Oppsal 1',              tid:'18:30',arena:'09 EK7'},
+  {lag:1,dag:'onsdag', hjem:'Ullern IF',                 borte:'Oppsal 1',              tid:'16:15',arena:'14 EK7'},
+  {lag:1,dag:'onsdag', hjem:'Oppsal 1',                  borte:'Lørenskog Rød',         tid:'18:30',arena:'09 EK7'},
+  {lag:1,dag:'fredag', hjem:'Oppsal 1',                  borte:'Frigg Oslo FK',         tid:'14:00',arena:'10 EK7', bursdag:'Gratulerer med dagen, Iben!'},
+  {lag:1,dag:'fredag', hjem:'Oppsal 1',                  borte:'KFUM-Kam. Oslo 2',      tid:'16:15',arena:'14 EK7', bursdag:'Gratulerer med dagen, Iben!'},
+  // Oppsal 2 – Girls 11* Søndag 1
+  {lag:2,dag:'søndag', hjem:'Oppsal 2',                  borte:'Forward, SK',           tid:'14:00',arena:'09 EK7', bursdag:'Gratulerer med dagen i går, Alma!'},
+  {lag:2,dag:'søndag', hjem:'Oppsal 2',                  borte:'Bækkelagets SK Gul',    tid:'16:15',arena:'10 EK7', bursdag:'Gratulerer med dagen i går, Alma!'},
+  {lag:2,dag:'tirsdag',hjem:'KFUM-Kam. Oslo 1',          borte:'Oppsal 2',              tid:'14:00',arena:'10 EK7'},
+  {lag:2,dag:'tirsdag',hjem:'Rustad Abildsø SK',         borte:'Oppsal 2',              tid:'16:15',arena:'09 EK7'},
+  {lag:2,dag:'torsdag',hjem:'Oppsal 2',                  borte:'Lørenskog Blå',         tid:'14:00',arena:'09 EK7'},
+  {lag:2,dag:'torsdag',hjem:'Oppsal 2',                  borte:'Heming, IL',            tid:'18:30',arena:'08 EK7'},
 ];
 
-let players = [], nextId = 0;
-let running = false, elapsed = 0, timerRef = null;
-let dragId = null, touchClone = null, touchOffX = 0, touchOffY = 0;
-let subLog = [];
-const MAX = 7;
-const ROWS = ['attack', 'mid', 'def', 'gk'];
+const dagDato = {
+  søndag:  '2026-07-26',
+  mandag:  '2026-07-27',
+  tirsdag: '2026-07-28',
+  onsdag:  '2026-07-29',
+  torsdag: '2026-07-30',
+  fredag:  '2026-07-31',
+};
 
-function posLabel(zone, idx, total) {
-  if (zone === 'gk')    return 'GK';
-  if (zone === 'bench') return '';
-  const presets = {
-    def:    { 1:['cb'], 2:['lb','rb'], 3:['lb','cb','rb'], 4:['lb','lcb','rcb','rb'] },
-    mid:    { 1:['cm'], 2:['lm','rm'], 3:['lm','cm','rm'], 4:['lm','lcm','rcm','rm'] },
-    attack: { 1:['s'],  2:['ls','rs'], 3:['lw','s','rw'],  4:['lw','ls','rs','rw']   },
-  };
-  const set = presets[zone] && presets[zone][total];
-  return set ? (set[idx] || '?') : '?';
+const dagLabel = {
+  søndag:  'Søn 26. juli',
+  mandag:  'Man 27. juli',
+  tirsdag: 'Tir 28. juli',
+  onsdag:  'Ons 29. juli',
+  torsdag: 'Tor 30. juli',
+  fredag:  'Fre 31. juli',
+};
+
+const badges  = { 1:'b1', 2:'b2' };
+
+// Oppsal 1 and 2 rosters. Born before 2015 → lagleder, 2015+ → spiller.
+// OSM appears in both teams (Oline Sjøvold Myklebust / Oviya Suganthy Myurathan).
+const spillere = {
+  // --- Oppsal 1 spillere ---
+  'AA':   {lag:[1], rolle:'spiller',  navn:'Alimar Almubarak'},
+  'AWK':  {lag:[1], rolle:'spiller',  navn:'Alma Wærnes Kristiansen'},
+  'ES':   {lag:[1], rolle:'spiller',  navn:'Elea Skjelvan'},
+  'FRV':  {lag:[1], rolle:'spiller',  navn:'Fride Reed Vivé'},
+  'HMH':  {lag:[1], rolle:'spiller',  navn:'Heidi Modvar Haakonsen'},
+  'IUTO': {lag:[1], rolle:'spiller',  navn:'Iben Ulrikke Thallaug Otterdal'},
+  'IST':  {lag:[1], rolle:'spiller',  navn:'Ina Silseth Torjuul'},
+  'IBT':  {lag:[1], rolle:'spiller',  navn:'Ingrid Broch Tendal'},
+  'KR':   {lag:[1], rolle:'spiller',  navn:'Kornelia Rundin'},
+  'OSM':  {lag:[1,2],rolle:'spiller', navn:'Oline S.M. / Oviya S.M.'},
+  // --- Oppsal 1 lagledere ---
+  'EUR':  {lag:[1], rolle:'lagleder', navn:'Eilif Ursin Reed'},
+  'KMT':  {lag:[1], rolle:'lagleder', navn:'Knut Marius Torjuul', prioritet:true, fornavn:'Knut Marius'},
+  'MKS':  {lag:[1], rolle:'lagleder', navn:'Mette Kristine Silseth'},
+  'SBT':  {lag:[1], rolle:'lagleder', navn:'Sigrid Broch Tendal'},
+  // --- Oppsal 2 spillere ---
+  'ADN':  {lag:[2], rolle:'spiller',  navn:'Anna Dokk Narvestad'},
+  'AHR':  {lag:[2], rolle:'spiller',  navn:'Anne Havik Romarheim'},
+  'ALBB': {lag:[2], rolle:'spiller',  navn:'Aurora Louisa Barrera Bunæs'},
+  'ESS':  {lag:[2], rolle:'spiller',  navn:'Elisha Samson-Semere'},
+  'IB':   {lag:[2], rolle:'spiller',  navn:'Isabelle Breivik'},
+  'JWN':  {lag:[2], rolle:'spiller',  navn:'Jasmin Wenstøp Nilsen'},
+  'LBM':  {lag:[2], rolle:'spiller',  navn:'Liv Bujnicki Myhrvold'},
+  'STS':  {lag:[2], rolle:'spiller',  navn:'Selma Thesen Sefton'},
+  'SNK':  {lag:[2], rolle:'spiller',  navn:'Sigrid Normann Kjellsen'},
+  'YFW':  {lag:[2], rolle:'spiller',  navn:'Ylva Fjelnseth Wold'},
+  // --- Oppsal 2 lagledere ---
+  'AW':   {lag:[2], rolle:'lagleder', navn:'Anders Wold', prioritet:true},
+  'HDN':  {lag:[2], rolle:'lagleder', navn:'Halvor Dokk Narvestad'},
+  'KEB':  {lag:[2], rolle:'lagleder', navn:'Karol Edward Bujnicki'},
+  'KFW':  {lag:[2], rolle:'lagleder', navn:'Kristin Fjelnseth Wold'},
+};
+
+let aktivLag = 'alle', aktivDag = 'alle', aktivSpiller = null;
+let synlige = [];
+
+function kampStart(k) {
+  const [hh, mm] = k.tid.split(':').map(Number);
+  const d = new Date(dagDato[k.dag]);
+  d.setHours(hh, mm, 0, 0);
+  return d;
 }
 
-function fmt(s) {
-  s = Math.max(0, Math.round(s));
-  return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
-}
-function minsFloor(s) { return Math.floor(Math.max(0,s)/60); }
+function nedtellingHTML(k) {
+  const now   = new Date();
+  const start = kampStart(k);
+  const slutt = new Date(start.getTime() + 30 * 60 * 1000);
 
-function mkPlayer(d, i) {
-  return { id:i, name:d.name, num:d.num, role:d.role,
-           zone:'bench', onPitch:false, secs:0, _base:0,
-           lastIn:null, stintStart:null, slot:null };
-}
+  if (now >= slutt) {
+    return `<span class="nd-pill nd-avsluttet">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      Avsluttet
+    </span>`;
+  }
 
-function loadPreset() {
-  players = PRESET_ROSTER.map((d,i) => mkPlayer(d,i));
-  nextId = players.length;
-  renderSetup();
-}
+  if (now >= start) {
+    return `<span class="nd-pill nd-startet">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+      Startet
+    </span>`;
+  }
 
-function initEmpty() { players = []; nextId = 0; renderSetup(); }
+  const sek  = Math.floor((start - now) / 1000);
+  const min  = Math.floor(sek / 60);
+  const timer = Math.floor(min / 60);
+  const dager = Math.floor(timer / 24);
 
-function renderSetup() {
-  const tb = document.getElementById('roster-body');
-  tb.innerHTML = '';
-  players.forEach(p => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><input type="number" class="num-input" min="1" max="99" value="${p.num}" onchange="updP(${p.id},'num',this.value)"></td>
-      <td><input type="text" maxlength="14" value="${p.name}" onchange="updP(${p.id},'name',this.value)"></td>
-      <td><button class="role-btn ${p.role}" onclick="toggleRole(${p.id})">${p.role==='keeper'?'Keeper':'Field'}</button></td>
-      <td><button class="del-btn" onclick="delP(${p.id})">✕</button></td>`;
-    tb.appendChild(tr);
-  });
-}
+  const pinSVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>`;
 
-function updP(id,f,v) { const p=players.find(q=>q.id===id); if(p) p[f]=f==='num'?(parseInt(v)||p.num):v; }
-function toggleRole(id) { const p=players.find(q=>q.id===id); if(p){p.role=p.role==='keeper'?'field':'keeper';renderSetup();} }
-function delP(id) { players=players.filter(q=>q.id!==id); renderSetup(); }
-function addPlayer() {
-  const n=document.getElementById('new-name').value.trim(); if(!n) return;
-  const num=parseInt(document.getElementById('new-num').value)||players.length+1;
-  players.push(mkPlayer({name:n,num,role:'field'},nextId++));
-  document.getElementById('new-name').value='';
-  document.getElementById('new-num').value='';
-  renderSetup();
+  if (min < 60) {
+    const s = sek % 60;
+    const m = min % 60;
+    return `${pinSVG} <span class="nd-label">starter om</span> <span class="nd-snart">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</span>`;
+  }
+  if (timer < 24) {
+    const h = timer;
+    const m = min % 60;
+    return `${pinSVG} <span class="nd-label">starter om</span> <span class="nd-tall">${h}t ${m}min</span>`;
+  }
+  return `${pinSVG} <span class="nd-label">starter om</span> <span class="nd-tall">${dager}d ${timer % 24}t</span>`;
 }
 
-function assignStartZones() {
-  const zoneOrder=['gk','def','def','mid','mid','attack','attack'];
-  let zc={gk:0,def:0,mid:0,attack:0};
-  players.forEach((p,i) => {
-    p.secs=0; p._base=0; p.lastIn=null; p.stintStart=null; p.slot=null;
-    if(i<MAX) {
-      p.onPitch=true; p.lastIn=0; p.stintStart=0;
-      const z=p.role==='keeper'?'gk':(zoneOrder[i]||'mid');
-      p.zone=z; p.slot=zc[z]||0; zc[z]=(zc[z]||0)+1;
-    } else { p.onPitch=false; p.zone='bench'; }
-  });
+const dagOrder  = ['søndag','mandag','tirsdag','onsdag','torsdag','fredag'];
+const dagKlasse = { søndag:'d-sun', mandag:'d-mon', tirsdag:'d-tue', onsdag:'d-wed', torsdag:'d-thu', fredag:'d-fri' };
+
+function getLagledereNavn(lagNr) {
+  return Object.values(spillere)
+    .filter(s => s.rolle === 'lagleder' && s.lag.includes(lagNr))
+    .sort((a, b) => {
+      if (a.prioritet && !b.prioritet) return -1;
+      if (!a.prioritet && b.prioritet) return 1;
+      return a.navn.localeCompare(b.navn, 'no');
+    })
+    .map(s => s.fornavn || s.navn.split(' ')[0]);
 }
 
-function startGame() {
-  const err=document.getElementById('setup-err');
-  if(!players.length){err.textContent='Add at least one player.';return;}
-  if(!players.some(p=>p.role==='keeper')){err.textContent='Assign a keeper.';return;}
-  err.textContent='';
-  assignStartZones(); subLog=[]; elapsed=0; running=false;
-  document.getElementById('setup').classList.remove('active');
-  document.getElementById('game').classList.add('active');
-  const btn=document.getElementById('btn-start');
-  btn.textContent='Start'; btn.className='btn btn-start';
-  document.getElementById('timer-display').textContent='00:00';
-  document.getElementById('suggest-text').textContent='';
-  renderGame();
-}
-
-function goSetup() {
-  if(running) toggleTimer();
-  document.getElementById('game').classList.remove('active');
-  document.getElementById('setup').classList.add('active');
-  renderSetup();
-}
-
-function toggleTimer() {
-  const btn=document.getElementById('btn-start');
-  if(!running) {
-    running=true;
-    const t0=Date.now()-elapsed*1000;
-    players.forEach(p=>{if(p.onPitch&&p.lastIn===null){p.lastIn=elapsed;p._base=p.secs;p.stintStart=elapsed;}});
-    timerRef=setInterval(()=>{
-      elapsed=Math.round((Date.now()-t0)/1000);
-      players.forEach(p=>{if(p.onPitch&&p.lastIn!==null) p.secs=p._base+(elapsed-p.lastIn);});
-      document.getElementById('timer-display').textContent=fmt(elapsed);
-      renderStats(); renderPlayers();
-    },500);
-    btn.textContent='Pause'; btn.className='btn btn-pause';
+function renderLagledere() {
+  const el = document.getElementById('lagleder-linje');
+  if (!el) return;
+  if (aktivLag === 'alle') {
+    const l1 = getLagledereNavn(1).join(', ');
+    const l2 = getLagledereNavn(2).join(', ');
+    el.innerHTML = `<span class="ll-team">Oppsal 1:</span> ${l1} &nbsp;·&nbsp; <span class="ll-team">Oppsal 2:</span> ${l2}`;
   } else {
-    running=false; clearInterval(timerRef);
-    players.forEach(p=>{if(p.onPitch&&p.lastIn!==null) p._base=p.secs;});
-    btn.textContent='Resume'; btn.className='btn btn-resume';
+    const names = getLagledereNavn(aktivLag).join(' · ');
+    el.innerHTML = `<span class="ll-team">Lagledere:</span> ${names}`;
   }
 }
 
-function resetTimer() {
-  running=false; clearInterval(timerRef); elapsed=0;
-  players.forEach(p=>{p.secs=0;p._base=0;p.lastIn=p.onPitch?0:null;p.stintStart=p.onPitch?0:null;});
-  subLog=[];
-  const btn=document.getElementById('btn-start');
-  btn.textContent='Start'; btn.className='btn btn-start';
-  document.getElementById('timer-display').textContent='00:00';
-  document.getElementById('suggest-text').textContent='';
-  renderGame();
-}
-
-function renderStats() {
-  const field=players.filter(p=>p.role==='field');
-  const onCount=players.filter(p=>p.onPitch).length;
-  const avg=field.length?Math.round(field.reduce((a,p)=>a+p.secs,0)/field.length):0;
-  const times=field.map(p=>p.secs);
-  const imbal=times.length>1?Math.max(...times)-Math.min(...times):0;
-  document.getElementById('stats-row').innerHTML=`
-    <div class="stat"><div class="stat-val">${onCount}/${MAX}</div><div class="stat-lbl">on pitch</div></div>
-    <div class="stat"><div class="stat-val">${fmt(avg)}</div><div class="stat-lbl">avg (field)</div></div>
-    <div class="stat"><div class="stat-val ${imbal>120?'warn':''}">${fmt(imbal)}</div><div class="stat-lbl">imbalance</div></div>`;
-}
-
-function zoneOrdered(zone) { return players.filter(p=>p.zone===zone).sort((a,b)=>(a.slot||0)-(b.slot||0)); }
-
-function playerCard(p, pos) {
-  const totalMins=minsFloor(p.secs);
-  const stintMins=p.onPitch&&p.stintStart!==null?minsFloor(elapsed-p.stintStart):null;
-  let timeLine='';
-  if(p.role==='keeper') timeLine='';
-  else if(stintMins!==null) timeLine=`${totalMins}m · +${stintMins}m`;
-  else timeLine=`${totalMins}m`;
-  return `<div class="player ${p.onPitch?'on-pitch':'on-bench'}${p.role==='keeper'?' keeper':''}" id="pc${p.id}"
-    draggable="true"
-    ondragstart="dragStart(event,${p.id})" ondragend="dragEnd(${p.id})"
-    ondragover="playerOver(event,${p.id})" ondragleave="playerLeave(${p.id})" ondrop="playerDrop(event,${p.id})"
-    ontouchstart="touchStart(event,${p.id})" ontouchmove="touchMove(event)" ontouchend="touchEnd(event,${p.id})">
-    <span class="p-pos">${pos}</span>
-    <span class="p-name">${p.name}</span>
-    <span class="p-time">${timeLine}</span>
-  </div>`;
-}
-
-function renderPlayers() {
-  ROWS.forEach(zone => {
-    const el=document.getElementById('row-'+zone);
-    const ordered=zoneOrdered(zone);
-    el.innerHTML=ordered.map((p,i)=>playerCard(p,posLabel(zone,i,ordered.length))).join('');
+function setDay(dag) {
+  aktivDag = dag;
+  document.querySelectorAll('.dbtn').forEach((b, i) => {
+    b.classList.toggle('active', ['alle',...dagOrder][i] === dag);
   });
-  const bench=document.getElementById('zone-bench');
-  const bp=zoneOrdered('bench');
-  bench.innerHTML=bp.length?bp.map(p=>playerCard(p,'')).join(''):'<span style="font-size:11px;color:#bbb">Empty</span>';
+  render();
 }
 
-function renderSubLog() {
-  const body=document.getElementById('log-body');
-  const empty=document.getElementById('log-empty');
-  if(!subLog.length) { empty.style.display='block'; body.querySelectorAll('.log-entry').forEach(e=>e.remove()); }
-  else { empty.style.display='none'; body.innerHTML=subLog.slice().reverse().map(e=>`<div class="log-entry">${e}</div>`).join(''); }
+const lagColors = { 1:'b1', 2:'b2' };
+const lagNames  = { 1:'Oppsal 1', 2:'Oppsal 2' };
+let sugFocusIdx = -1;
+
+function setLag(lag) {
+  aktivLag = lag;
+  aktivSpiller = null;
+  document.getElementById('spiller-input').value = '';
+  document.getElementById('spiller-clear').classList.remove('vis');
+  document.getElementById('spiller-tag').classList.remove('vis');
+  const btns = document.querySelectorAll('.lbtn');
+  btns.forEach(b => b.className = 'lbtn');
+  if (lag === 'alle') btns[0].classList.add('active-alle');
+  else btns[lag].classList.add('active-' + lag);
+  renderLagledere();
+  render();
 }
 
-function renderGame() { renderStats(); renderPlayers(); renderSubLog(); }
-
-function toggleLog() {
-  const body=document.getElementById('log-body');
-  const open=body.classList.toggle('open');
-  document.getElementById('log-toggle').classList.toggle('open',open);
+function getSuggestions(key) {
+  if (!key) return [];
+  return Object.keys(spillere)
+    .filter(i => i.startsWith(key))
+    .sort()
+    .slice(0, 6);
 }
 
-function showNotice(msg) {
-  const el=document.getElementById('notice');
-  el.textContent=msg; el.style.display='block';
-  clearTimeout(el._t); el._t=setTimeout(()=>el.style.display='none',2500);
+function renderSuggestions(key) {
+  const box = document.getElementById('spiller-suggestions');
+  const matches = getSuggestions(key);
+  sugFocusIdx = -1;
+  if (!key || matches.length === 0) { box.classList.remove('vis'); return; }
+
+  box.innerHTML = matches.map((init) => {
+    const info = spillere[init];
+    const highlighted = `<span class="sug-match">${init.slice(0, key.length)}</span>${init.slice(key.length)}`;
+    const rollePill = `<span class="rolle-pill${info.rolle === 'lagleder' ? ' rolle-lagleder' : ''}">${info.rolle}</span>`;
+    const lagPills = info.lag.map(l =>
+      `<span class="sug-lag ${lagColors[l]}">${lagNames[l]}</span>`
+    ).join(' ');
+    const navnHTML = info.rolle === 'lagleder'
+      ? `<span class="sug-navn">${info.navn}</span>`
+      : '';
+    return `<div class="sug-item" data-init="${init}" onmousedown="selectSuggestion('${init}')">
+      <div class="sug-left">
+        <span class="sug-initial">${highlighted}</span>
+        ${navnHTML}
+      </div>
+      <div class="sug-right">${rollePill}${lagPills}</div>
+    </div>`;
+  }).join('');
+  box.classList.add('vis');
 }
 
-function pitchCount() { return players.filter(p=>p.onPitch).length; }
-function getDragging() { return players.find(p=>p.id===dragId)||null; }
+function selectSuggestion(init) {
+  document.getElementById('spiller-input').value = init;
+  document.getElementById('spiller-suggestions').classList.remove('vis');
+  applySpiller(init);
+}
 
-function moveToZone(id, toZone) {
-  const p=players.find(q=>q.id===id);
-  if(!p||p.zone===toZone) return false;
-  const fromBench=p.zone==='bench', toBench=toZone==='bench';
-  if(fromBench&&!toBench&&pitchCount()>=MAX){showNotice('Pitch full — move someone off first.');return false;}
-  const wasOn=p.onPitch, nowOn=!toBench;
-  if(!wasOn&&nowOn) {
-    const ex=players.filter(q=>q.zone===toZone&&q.id!==id);
-    p.slot=ex.length>0?Math.max(...ex.map(q=>q.slot||0))+1:0;
-    p.lastIn=elapsed; p._base=p.secs; p.stintStart=elapsed;
-    subLog.push(`${fmt(elapsed)} — ${p.name} ON → ${toZone}`);
-  } else if(wasOn&&!nowOn) {
-    if(running) p._base=p.secs;
-    p.lastIn=null; p.stintStart=null; p.slot=null;
-    subLog.push(`${fmt(elapsed)} — ${p.name} OFF (total ${fmt(p.secs)})`);
-  } else {
-    const ex=players.filter(q=>q.zone===toZone&&q.id!==id);
-    p.slot=ex.length>0?Math.max(...ex.map(q=>q.slot||0))+1:0;
+function onSpillerInput(val) {
+  const key = val.trim().toUpperCase();
+  document.getElementById('spiller-clear').classList.toggle('vis', val.length > 0);
+  renderSuggestions(key);
+
+  if (!key) {
+    aktivSpiller = null;
+    document.getElementById('spiller-tag').classList.remove('vis');
+    resetLagBtns();
+    render();
+    return;
   }
-  p.zone=toZone; p.onPitch=nowOn;
-  return true;
+
+  applySpiller(key);
 }
 
-function swapPlayers(idA, idB) {
-  const a=players.find(p=>p.id===idA), b=players.find(p=>p.id===idB);
-  if(!a||!b||idA===idB||a.zone===b.zone) return;
-  const onA=a.onPitch, onB=b.onPitch, now=elapsed;
-  const zoneA=a.zone, slotA=a.slot, zoneB=b.zone, slotB=b.slot;
-  if(onA&&!onB) {
-    if(running) a._base=a.secs;
-    a.lastIn=null; a.stintStart=null; a.onPitch=false; a.zone=zoneB; a.slot=slotB;
-    b.lastIn=now; b._base=b.secs; b.stintStart=now; b.onPitch=true; b.zone=zoneA; b.slot=slotA;
-    subLog.push(`${fmt(now)} — ${b.name} ON / ${a.name} OFF (total ${fmt(a.secs)})`);
-  } else if(!onA&&onB) {
-    if(running) b._base=b.secs;
-    b.lastIn=null; b.stintStart=null; b.onPitch=false; b.zone=zoneA; b.slot=slotA;
-    a.lastIn=now; a._base=a.secs; a.stintStart=now; a.onPitch=true; a.zone=zoneB; a.slot=slotB;
-    subLog.push(`${fmt(now)} — ${a.name} ON / ${b.name} OFF (total ${fmt(b.secs)})`);
+function applySpiller(key) {
+  const tag = document.getElementById('spiller-tag');
+  const info = spillere[key] || null;
+  aktivSpiller = info ? info.lag : null;
+
+  if (info) {
+    tag.textContent = info.lag.length > 1 ? `Lag ${info.lag.join(' & ')}` : lagNames[info.lag[0]];
+    tag.classList.add('vis');
   } else {
-    a.zone=zoneB; a.slot=slotB; b.zone=zoneA; b.slot=slotA;
+    tag.textContent = 'Ikke funnet';
+    tag.classList.add('vis');
   }
-  clearHL(); renderGame();
+  resetLagBtns();
+  render();
 }
 
-function clearHL() {
-  players.forEach(p=>{const el=document.getElementById('pc'+p.id);if(el)el.classList.remove('drop-target');});
-  ROWS.forEach(r=>{const el=document.getElementById('row-'+r);if(el){el.classList.remove('drag-over');el.classList.remove('drop-blocked');}});
-  const b=document.getElementById('zone-bench'); if(b) b.classList.remove('drag-over');
+function onSpillerKey(e) {
+  const box = document.getElementById('spiller-suggestions');
+  const items = box.querySelectorAll('.sug-item');
+  if (!box.classList.contains('vis') || items.length === 0) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    sugFocusIdx = Math.min(sugFocusIdx + 1, items.length - 1);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    sugFocusIdx = Math.max(sugFocusIdx - 1, 0);
+  } else if (e.key === 'Enter' && sugFocusIdx >= 0) {
+    e.preventDefault();
+    selectSuggestion(items[sugFocusIdx].dataset.init);
+    return;
+  } else if (e.key === 'Escape') {
+    box.classList.remove('vis');
+    return;
+  } else { return; }
+
+  items.forEach((el, i) => el.classList.toggle('focused', i === sugFocusIdx));
 }
 
-function dragStart(e,id){dragId=id;e.dataTransfer.setData('text',String(id));setTimeout(()=>{const el=document.getElementById('pc'+id);if(el)el.classList.add('dragging');},0);}
-function dragEnd(id){dragId=null;const el=document.getElementById('pc'+id);if(el)el.classList.remove('dragging');clearHL();}
-function playerOver(e,id){e.preventDefault();e.stopPropagation();if(dragId===null||dragId===id)return;const el=document.getElementById('pc'+id);if(el)el.classList.add('drop-target');}
-function playerLeave(id){const el=document.getElementById('pc'+id);if(el)el.classList.remove('drop-target');}
-function playerDrop(e,id){e.preventDefault();e.stopPropagation();const from=parseInt(e.dataTransfer.getData('text'));if(!isNaN(from)&&from!==id)swapPlayers(from,id);else clearHL();}
-
-function rowOver(e,zone){
-  e.preventDefault();
-  const dr=getDragging(),el=document.getElementById('row-'+zone);
-  if(!el||!dr) return;
-  const blocked=dr.zone==='bench'&&pitchCount()>=MAX;
-  el.classList.toggle('drag-over',!blocked); el.classList.toggle('drop-blocked',blocked);
-}
-function rowLeave(zone){const el=document.getElementById('row-'+zone);if(el){el.classList.remove('drag-over');el.classList.remove('drop-blocked');}}
-function rowDrop(e,zone){
-  e.preventDefault();const id=parseInt(e.dataTransfer.getData('text'));
-  if(isNaN(id)) return;
-  const p=players.find(q=>q.id===id);if(!p||p.zone===zone){clearHL();return;}
-  moveToZone(id,zone);clearHL();renderGame();
-}
-function benchOver(e){e.preventDefault();document.getElementById('zone-bench').classList.add('drag-over');}
-function benchLeave(){document.getElementById('zone-bench').classList.remove('drag-over');}
-function benchDrop(e){
-  e.preventDefault();document.getElementById('zone-bench').classList.remove('drag-over');
-  const id=parseInt(e.dataTransfer.getData('text'));if(!isNaN(id))moveToZone(id,'bench');
-  clearHL();renderGame();
+function clearSpiller() {
+  aktivSpiller = null;
+  document.getElementById('spiller-input').value = '';
+  document.getElementById('spiller-clear').classList.remove('vis');
+  document.getElementById('spiller-tag').classList.remove('vis');
+  document.getElementById('spiller-suggestions').classList.remove('vis');
+  resetLagBtns();
+  render();
 }
 
-function touchStart(e,id){
-  dragId=id; const el=e.currentTarget,r=el.getBoundingClientRect();
-  touchOffX=e.touches[0].clientX-r.left; touchOffY=e.touches[0].clientY-r.top;
-  touchClone=el.cloneNode(true);
-  touchClone.style.cssText=`position:fixed;width:${r.width}px;height:${r.height}px;opacity:0.85;pointer-events:none;z-index:999;left:${r.left}px;top:${r.top}px;border-radius:7px`;
-  document.body.appendChild(touchClone); el.classList.add('dragging'); e.preventDefault();
-}
-function touchMove(e){
-  if(!touchClone) return;
-  const t=e.touches[0];
-  touchClone.style.left=(t.clientX-touchOffX)+'px';
-  touchClone.style.top=(t.clientY-touchOffY)+'px';
-  e.preventDefault();
-}
-function touchEnd(e,id){
-  if(!touchClone) return;
-  touchClone.remove(); touchClone=null;
-  const el=document.getElementById('pc'+id); if(el) el.classList.remove('dragging');
-  const t=e.changedTouches[0];
-  const hit=document.elementFromPoint(t.clientX,t.clientY);
-  const tPid=findPid(hit), tZone=findZone(hit);
-  if(tPid!==null&&tPid!==id) swapPlayers(id,tPid);
-  else if(tZone) moveToZone(id,tZone);
-  dragId=null; clearHL(); renderGame(); e.preventDefault();
-}
-function findPid(el){let c=el;while(c){if(c.id&&c.id.startsWith('pc')){const n=parseInt(c.id.slice(2));if(!isNaN(n))return n;}c=c.parentElement;}return null;}
-function findZone(el){
-  let c=el;
-  while(c){
-    if(c.id==='row-attack')return'attack'; if(c.id==='row-mid')return'mid';
-    if(c.id==='row-def')return'def';       if(c.id==='row-gk')return'gk';
-    if(c.id==='zone-bench')return'bench';
-    c=c.parentElement;
-  } return null;
+function resetLagBtns() {
+  const btns = document.querySelectorAll('.lbtn');
+  btns.forEach(b => b.className = 'lbtn');
+  if (aktivLag === 'alle') btns[0].classList.add('active-alle');
+  else btns[aktivLag].classList.add('active-' + aktivLag);
 }
 
-function suggestSub() {
-  const bench=players.filter(p=>p.role==='field'&&!p.onPitch);
-  const onField=players.filter(p=>p.role==='field'&&p.onPitch);
-  const el=document.getElementById('suggest-text');
-  if(!bench.length){el.textContent='No field players on bench.';return;}
-  if(!onField.length){el.textContent='No field players on pitch.';return;}
-  const needsOn=bench.reduce((a,b)=>a.secs<=b.secs?a:b);
-  const takeOff=onField.reduce((a,b)=>a.secs>=b.secs?a:b);
-  el.innerHTML=`Sub <b>${takeOff.name}</b> (${minsFloor(takeOff.secs)}m) → <b>${needsOn.name}</b> (${minsFloor(needsOn.secs)}m)`;
+function render() {
+  synlige = kamper
+    .map((k, i) => ({ ...k, _i: i }))
+    .filter(k => {
+      const lagOK = aktivSpiller
+        ? aktivSpiller.includes(k.lag)
+        : (aktivLag === 'alle' || k.lag === aktivLag);
+      return lagOK && (aktivDag === 'alle' || k.dag === aktivDag);
+    })
+    .sort((a, b) => {
+      const di = dagOrder.indexOf(a.dag) - dagOrder.indexOf(b.dag);
+      return di !== 0 ? di : a.tid.localeCompare(b.tid);
+    });
+
+  document.getElementById('count').textContent = synlige.length + ' kamper';
+
+  const el = document.getElementById('liste');
+  if (!synlige.length) {
+    el.innerHTML = '<div class="empty">Ingen kamper funnet</div>';
+    return;
+  }
+
+  el.innerHTML = synlige.map((k, i) => `
+    <div class="kamp ${dagKlasse[k.dag]}">
+      <div class="kamp-top">
+        <span class="lag-badge ${badges[k.lag]}">Oppsal ${k.lag}</span>
+        <div class="kamp-tidblokk">
+          <div class="kamp-tid">${k.tid}</div>
+          <div class="kamp-dag">${dagLabel[k.dag]}</div>
+        </div>
+      </div>
+      <div class="kamp-teams">${k.hjem} – ${k.borte}</div>
+      <div class="kamp-arena">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+        ${k.arena}
+      </div>
+      <div class="nedtelling" id="nd-${i}">${nedtellingHTML(k)}</div>
+      ${k.bursdag ? `<div class="bursdag-linje">${k.bursdag}</div>` : ''}
+    </div>`
+  ).join('');
 }
 
-document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
-document.addEventListener('gesturestart', e => e.preventDefault());
-
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js');
+function tick() {
+  synlige.forEach((k, i) => {
+    const el = document.getElementById('nd-' + i);
+    if (el) el.innerHTML = nedtellingHTML(k);
+  });
 }
 
-initEmpty();
+renderLagledere();
+render();
+setInterval(tick, 1000);
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.spiller-wrap')) {
+    document.getElementById('spiller-suggestions').classList.remove('vis');
+  }
+});
 </script>
 </body>
 </html>
